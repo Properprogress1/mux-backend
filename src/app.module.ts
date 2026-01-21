@@ -10,7 +10,7 @@ import { LimitsModule } from './limits/limits.module';
 import { RecoveryModule } from './recovery/recovery.module';
 
 @Module({
-imports: [
+  imports: [
     ConfigModule.forRoot({
       isGlobal: true,
       envFilePath: '.env',
@@ -22,4 +22,7 @@ imports: [
     LimitsModule,
     RecoveryModule,
   ],
+  controllers: [AppController],
+  providers: [AppService],
+})
 export class AppModule {}

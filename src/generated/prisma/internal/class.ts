@@ -20,7 +20,7 @@ const config: runtime.GetPrismaClientConfig = {
   "clientVersion": "7.3.0",
   "engineVersion": "9d6ad21cbbceab97458517b147a6a09ff43aa735",
   "activeProvider": "postgresql",
-  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n\n  moduleFormat = \"cjs\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n",
+  "inlineSchema": "// This is your Prisma schema file,\n// learn more about it in the docs: https://pris.ly/d/prisma-schema\n\n// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?\n// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init\n\ngenerator client {\n  provider = \"prisma-client\"\n  output   = \"../src/generated/prisma\"\n\n  moduleFormat = \"cjs\"\n}\n\ndatasource db {\n  provider = \"postgresql\"\n}\n\n/// Mainnet/testnet separation for all wallets.\nenum WalletNetwork {\n  MAINNET\n  TESTNET\n}\n\n/// Internal lifecycle states (wallets are not user-facing).\nenum WalletStatus {\n  /// Record is created but not yet usable (e.g. secret not stored or verification pending).\n  PROVISIONING\n\n  /// Wallet is usable for signing / custody operations.\n  ACTIVE\n\n  /// A rotation is in progress; a successor wallet should be created and promoted to ACTIVE.\n  ROTATING\n\n  /// Wallet is intentionally paused from use (operational hold).\n  SUSPENDED\n\n  /// Wallet is permanently disabled (no further use).\n  DISABLED\n\n  /// Wallet is suspected compromised; permanently blocked from use.\n  COMPROMISED\n}\n\n/// Persistence-ready internal representation of an \"invisible wallet\".\nmodel Wallet {\n  id String @id @default(uuid())\n\n  /// Owner reference (intentionally not a relation yet to keep this model portable).\n  userId String\n\n  /// Chain-agnostic public identifier (address/public key).\n  publicKey String\n\n  /// Chain-agnostic encrypted secret material (envelope/serialized payload).\n  encryptedSecret String\n\n  /// Supports future crypto upgrades (KMS provider, envelope format, etc.).\n  encryptionVersion Int @default(1)\n\n  /// Supports rotation by incrementing secret material while preserving history.\n  secretVersion Int @default(1)\n\n  network WalletNetwork\n  status  WalletStatus  @default(PROVISIONING)\n\n  /// Operational metadata for audits/debugging.\n  statusReason    String?\n  statusChangedAt DateTime @default(now())\n\n  /// Rotation history: link to the prior wallet record (if this wallet is a successor).\n  rotatedFromId String?\n  rotatedFrom   Wallet?  @relation(\"WalletRotation\", fields: [rotatedFromId], references: [id])\n  rotatedTo     Wallet[] @relation(\"WalletRotation\")\n\n  createdAt DateTime @default(now())\n  updatedAt DateTime @updatedAt\n\n  @@unique([network, publicKey])\n  @@index([userId, network])\n  @@index([status, network])\n}\n",
   "runtimeDataModel": {
     "models": {},
     "enums": {},
@@ -28,7 +28,7 @@ const config: runtime.GetPrismaClientConfig = {
   }
 }
 
-config.runtimeDataModel = JSON.parse("{\"models\":{},\"enums\":{},\"types\":{}}")
+config.runtimeDataModel = JSON.parse("{\"models\":{\"Wallet\":{\"fields\":[{\"name\":\"id\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"userId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"publicKey\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"encryptedSecret\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"encryptionVersion\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"secretVersion\",\"kind\":\"scalar\",\"type\":\"Int\"},{\"name\":\"network\",\"kind\":\"enum\",\"type\":\"WalletNetwork\"},{\"name\":\"status\",\"kind\":\"enum\",\"type\":\"WalletStatus\"},{\"name\":\"statusReason\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"statusChangedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"rotatedFromId\",\"kind\":\"scalar\",\"type\":\"String\"},{\"name\":\"rotatedFrom\",\"kind\":\"object\",\"type\":\"Wallet\",\"relationName\":\"WalletRotation\"},{\"name\":\"rotatedTo\",\"kind\":\"object\",\"type\":\"Wallet\",\"relationName\":\"WalletRotation\"},{\"name\":\"createdAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"},{\"name\":\"updatedAt\",\"kind\":\"scalar\",\"type\":\"DateTime\"}],\"dbName\":null}},\"enums\":{},\"types\":{}}")
 
 async function decodeBase64AsWasm(wasmBase64: string): Promise<WebAssembly.Module> {
   const { Buffer } = await import('node:buffer')
@@ -60,8 +60,8 @@ export interface PrismaClientConstructor {
    * @example
    * ```
    * const prisma = new PrismaClient()
-   * // Fetch zero or more Users
-   * const users = await prisma.user.findMany()
+   * // Fetch zero or more Wallets
+   * const wallets = await prisma.wallet.findMany()
    * ```
    * 
    * Read more in our [docs](https://pris.ly/d/client).
@@ -82,8 +82,8 @@ export interface PrismaClientConstructor {
  * @example
  * ```
  * const prisma = new PrismaClient()
- * // Fetch zero or more Users
- * const users = await prisma.user.findMany()
+ * // Fetch zero or more Wallets
+ * const wallets = await prisma.wallet.findMany()
  * ```
  * 
  * Read more in our [docs](https://pris.ly/d/client).
@@ -176,7 +176,15 @@ export interface PrismaClient<
     extArgs: ExtArgs
   }>>
 
-    
+      /**
+   * `prisma.wallet`: Exposes CRUD operations for the **Wallet** model.
+    * Example usage:
+    * ```ts
+    * // Fetch zero or more Wallets
+    * const wallets = await prisma.wallet.findMany()
+    * ```
+    */
+  get wallet(): Prisma.WalletDelegate<ExtArgs, { omit: OmitOpts }>;
 }
 
 export function getPrismaClientClass(): PrismaClientConstructor {

@@ -9,7 +9,21 @@
 * 🟢 You can import this file directly.
 */
 
+export const WalletNetwork = {
+  MAINNET: 'MAINNET',
+  TESTNET: 'TESTNET'
+} as const
+
+export type WalletNetwork = (typeof WalletNetwork)[keyof typeof WalletNetwork]
 
 
-// This file is empty because there are no enums in the schema.
-export {}
+export const WalletStatus = {
+  PROVISIONING: 'PROVISIONING',
+  ACTIVE: 'ACTIVE',
+  ROTATING: 'ROTATING',
+  SUSPENDED: 'SUSPENDED',
+  DISABLED: 'DISABLED',
+  COMPROMISED: 'COMPROMISED'
+} as const
+
+export type WalletStatus = (typeof WalletStatus)[keyof typeof WalletStatus]

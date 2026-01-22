@@ -43,7 +43,7 @@ export class EncryptionService {
   encrypt(plaintext: string): EncryptionResult {
     try {
       const iv = crypto.randomBytes(this.ivLength);
-      const cipher = crypto.createCipherGCM(this.algorithm, this.encryptionKey, iv);
+      const cipher = crypto.createCipheriv(this.algorithm, this.encryptionKey, iv);
       cipher.setAAD(Buffer.from('wallet-secret', 'utf8'));
       
       let encrypted = cipher.update(plaintext, 'utf8', 'hex');
@@ -73,7 +73,7 @@ export class EncryptionService {
     try {
       const { encryptedData, iv, tag } = encryptionResult;
       
-      const decipher = crypto.createDecipherGCM(this.algorithm, this.encryptionKey, Buffer.from(iv, 'hex'));
+      const decipher = crypto.createDecipheriv(this.algorithm, this.encryptionKey, Buffer.from(iv, 'hex'));
       decipher.setAAD(Buffer.from('wallet-secret', 'utf8'));
       decipher.setAuthTag(Buffer.from(tag, 'hex'));
       
